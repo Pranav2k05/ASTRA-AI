@@ -34,25 +34,7 @@ Your laptop security is the #1 priority. ASTRA employs a zero-trust model consis
 
 ### 📊 System Architecture
 
-```mermaid
-graph TD
-    User([User Laptop Browser]) -->|Loads Frontend| WebServer[Java Static Web Server]
-    WebServer -.->|Injects Token| User
-    
-    User -->|Sends REST + X-ASTRA-Token| APIController[Spring Boot API Controller]
-    
-    subgraph "Java Backend (Strictly bound to 127.0.0.1)"
-        APIController -->|Validate Token| SecurityInterceptor[Security Interceptor]
-        SecurityInterceptor -->|Access Granted| LlmService[LlmService]
-        LlmService -->|Match Rules/Chat| SystemService[SystemService]
-        LlmService -->|Apply Backgrounds| WallpaperService[WallpaperService]
-        
-        SystemService -->|Secure ProcessBuilder| WinAPI[Windows OS Commands]
-        WallpaperService -->|User32.dll PInvoke| DesktopBg[Desktop Wallpaper]
-    end
-    
-    LlmService -->|Secure HTTPS| GeminiAPI[Google Gemini Developer API]
-```
+ASTRA operates via a secure local loopback architecture where the user's laptop browser loads the frontend statically from the Java web server, which dynamically injects the session token into the DOM. When the user interacts with the app, the frontend sends REST API requests containing the `X-ASTRA-Token` to the Spring Boot API Controller. Inside the Java backend (which is strictly bound to `127.0.0.1`), a Security Interceptor validates the token. Once access is verified, the request flows to the `LlmService`, which communicates externally with the Google Gemini Developer API over secure HTTPS to process user prompts. For system actions, the service delegates either to the `SystemService`—which executes safe OS commands using an isolated `ProcessBuilder`—or the `WallpaperService`—which dynamically updates the desktop background via native Windows `User32.dll` P/Invoke integrations.
 
 ---
 
