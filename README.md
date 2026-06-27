@@ -41,10 +41,10 @@ ASTRA operates via a secure local loopback architecture where the user's laptop 
 ## 🚀 Getting Started (Installation & Launch)
 
 ### 📋 Prerequisites
-Make sure your Windows laptop has the following software installed (already verified on your system):
-*   **Java Development Kit (JDK)**: Version 21 or newer (your system has Java 25)
-*   **Node.js & npm**: For building the user interface (your system has Node 24)
-*   **Apache Maven**: For building the backend (your system has Maven 3.9)
+Make sure your Windows laptop has the following software installed:
+*   **Java Development Kit (JDK)**: Version 21 or newer
+*   **Node.js & npm**: For building the user interface
+*   **Apache Maven**: For building the backend 
 
 ### 📥 Cloning & Setup
 Clone this repository to your local machine:
