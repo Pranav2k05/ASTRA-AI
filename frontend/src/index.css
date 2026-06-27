@@ -156,6 +156,20 @@ body {
   animation: pulse-glow 3s infinite alternate;
 }
 
+.logo-ring {
+  transform-origin: center;
+  animation: rotate-ring 12s linear infinite;
+}
+
+@keyframes rotate-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .logo-text {
   font-size: 22px;
   font-weight: 800;
