@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ASTRA - Personal Local AI Assistant</title>
+    <!-- Session handshake token injected dynamically by Java backend on page load -->
+    <script>
+      window.ASTRA_TOKEN = "${ASTRA_TOKEN}";
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
