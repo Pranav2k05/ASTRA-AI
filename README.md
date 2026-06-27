@@ -41,7 +41,7 @@ graph TD
     
     User -->|Sends REST + X-ASTRA-Token| APIController[Spring Boot API Controller]
     
-    subgraph Java Backend (Strictly bound to 127.0.0.1)
+    subgraph "Java Backend (Strictly bound to 127.0.0.1)"
         APIController -->|Validate Token| SecurityInterceptor[Security Interceptor]
         SecurityInterceptor -->|Access Granted| LlmService[LlmService]
         LlmService -->|Match Rules/Chat| SystemService[SystemService]
