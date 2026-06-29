@@ -49,3 +49,6 @@ $RECYCLE.BIN/
 # ASTRA local config/data cache
 .astra/
 config.json
+
+# Local documentation / explanation files
+EXPLANATION.md

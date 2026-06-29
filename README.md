@@ -61,7 +61,7 @@ cd ASTRA-AI
     *   Compile the frontend assets and link them to the backend statically.
     *   Run the Maven Java Compiler.
     *   Launch the secure server.
-    *   Automatically open your default browser to [http://localhost:8080](http://localhost:8080).
+    *   Automatically launch Google Chrome to run ASTRA with your active signed-in session (falling back to your system default browser if Chrome is not installed) at [http://localhost:8080](http://localhost:8080).
 4.  Keep the command prompt window open while you use ASTRA. Press `CTRL + C` in that window when you are ready to turn ASTRA off.
 
 ---
@@ -75,6 +75,14 @@ cd ASTRA-AI
 
 ### 💬 Sample Natural Language Prompts
 In the **AI Dialogue** tab, type anything you want to run! Here are some examples:
+*   **Play Music on YouTube (Autoplay)**:
+    *   `play chill lofi beats`
+    *   `play some song on youtube`
+    *   `open youtube and play synthwave`
+    *   *(Note: ASTRA queries YouTube, resolves the first matching video ID, and launches it in Chrome with autoplay immediately.)*
+*   **Search Google Instantly**:
+    *   `google standard deviation formula`
+    *   `search google for latest AI news`
 *   **Open Directories in VS Code**:
     *   `open vscode C:\Users\User\Desktop\ProjectClge\ASTRA`
     *   `open my documents folder in vs code`

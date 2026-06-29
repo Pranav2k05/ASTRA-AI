@@ -199,4 +199,73 @@ public class SystemService {
             return false;
         }
     }
+
+    /**
+     * Search YouTube for a song and open/play the first result.
+     */
+    public boolean playYoutubeSong(String songQuery) {
+        if (songQuery == null || songQuery.trim().isEmpty()) {
+            return false;
+        }
+
+        String searchUrl = "https://www.youtube.com/results?search_query=" + java.net.URLEncoder.encode(songQuery.trim(), java.nio.charset.StandardCharsets.UTF_8);
+        String videoId = null;
+
+        try {
+            // Perform GET request to search page
+            java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
+                    .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
+                    .build();
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(searchUrl))
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .timeout(java.time.Duration.ofSeconds(5))
+                    .GET()
+                    .build();
+
+            java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                String html = response.body();
+                // Find first videoId in YouTube initial data JSON payload
+                java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\"videoId\":\"([a-zA-Z0-9_-]{11})\"");
+                java.util.regex.Matcher matcher = pattern.matcher(html);
+                if (matcher.find()) {
+                    videoId = matcher.group(1);
+                } else {
+                    // Alternative check for /watch?v=...
+                    java.util.regex.Pattern altPattern = java.util.regex.Pattern.compile("/watch\\?v=([a-zA-Z0-9_-]{11})");
+                    java.util.regex.Matcher altMatcher = altPattern.matcher(html);
+                    if (altMatcher.find()) {
+                        videoId = altMatcher.group(1);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error searching YouTube song: " + e.getMessage());
+        }
+
+        String finalUrl;
+        if (videoId != null && !videoId.isEmpty()) {
+            finalUrl = "https://www.youtube.com/watch?v=" + videoId + "&autoplay=1";
+            System.out.println("[YouTube] Found first video ID: " + videoId + ", launching with autoplay.");
+        } else {
+            // Fallback to search query page
+            finalUrl = searchUrl;
+            System.out.println("[YouTube] Could not resolve first video ID, falling back to search query URL.");
+        }
+
+        // Open in default browser (Chrome as configured)
+        return openApplication(finalUrl);
+    }
+
+    /**
+     * Search Google for a query and open in browser.
+     */
+    public boolean searchGoogle(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return false;
+        }
+        String searchUrl = "https://www.google.com/search?q=" + java.net.URLEncoder.encode(query.trim(), java.nio.charset.StandardCharsets.UTF_8);
+        return openApplication(searchUrl);
+    }
 }

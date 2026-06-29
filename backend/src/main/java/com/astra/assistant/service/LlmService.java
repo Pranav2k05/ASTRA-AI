@@ -168,6 +168,34 @@ public class LlmService {
             return res;
         }
 
+        // Play Youtube Song
+        if (message.startsWith("play ") || (message.contains("play ") && message.contains("youtube"))) {
+            String songQuery = message;
+            songQuery = songQuery.replace("open youtube and play ", "")
+                                 .replace("play ", "")
+                                 .replace(" on youtube", "")
+                                 .trim();
+            if (!songQuery.isEmpty()) {
+                boolean success = systemService.playYoutubeSong(songQuery);
+                res.put("reply", "Searching YouTube and playing: **" + songQuery + "**");
+                res.put("actionExecuted", "PLAY_YOUTUBE");
+                res.put("success", success);
+                return res;
+            }
+        }
+
+        // Search Google
+        if (message.startsWith("search google for ") || message.startsWith("google ")) {
+            String googleQuery = message.replace("search google for ", "").replace("google ", "").trim();
+            if (!googleQuery.isEmpty()) {
+                boolean success = systemService.searchGoogle(googleQuery);
+                res.put("reply", "Searching Google for: **" + googleQuery + "**");
+                res.put("actionExecuted", "SEARCH_GOOGLE");
+                res.put("success", success);
+                return res;
+            }
+        }
+
         return null; // Let LLM handle it
     }
 
@@ -209,7 +237,11 @@ public class LlmService {
                 "   Format: [ACTION:SEARCH_WALLPAPERS;QUERY:keyword]\n" +
                 "5. Open any registered Windows application, protocol (e.g. whatsapp:), or website URL:\n" +
                 "   Format: [ACTION:OPEN_APP;QUERY:appName_or_URL_or_protocol]\n" +
-                "   Examples: [ACTION:OPEN_APP;QUERY:calc], [ACTION:OPEN_APP;QUERY:notepad], [ACTION:OPEN_APP;QUERY:whatsapp:], [ACTION:OPEN_APP;QUERY:chrome], [ACTION:OPEN_APP;QUERY:https://google.com], [ACTION:OPEN_APP;QUERY:ms-settings:]\n\n" +
+                "   Examples: [ACTION:OPEN_APP;QUERY:calc], [ACTION:OPEN_APP;QUERY:notepad], [ACTION:OPEN_APP;QUERY:whatsapp:], [ACTION:OPEN_APP;QUERY:chrome], [ACTION:OPEN_APP;QUERY:https://google.com], [ACTION:OPEN_APP;QUERY:ms-settings:]\n" +
+                "6. Search YouTube for music/songs and autoplay it:\n" +
+                "   Format: [ACTION:PLAY_YOUTUBE;QUERY:song_name_or_keyword]\n" +
+                "7. Search Google for queries:\n" +
+                "   Format: [ACTION:SEARCH_GOOGLE;QUERY:search_term]\n\n" +
                 "Security & Formatting Guidelines:\n" +
                 "- Ensure paths are valid and Windows formatted.\n" +
                 "- ONLY trigger actions if the user explicitly requests them.\n" +
@@ -303,6 +335,16 @@ public class LlmService {
                 case "OPEN_APP":
                     if (query != null && !query.trim().isEmpty()) {
                         success = systemService.openApplication(query);
+                    }
+                    break;
+                case "PLAY_YOUTUBE":
+                    if (query != null && !query.trim().isEmpty()) {
+                        success = systemService.playYoutubeSong(query);
+                    }
+                    break;
+                case "SEARCH_GOOGLE":
+                    if (query != null && !query.trim().isEmpty()) {
+                        success = systemService.searchGoogle(query);
                     }
                     break;
                 default:

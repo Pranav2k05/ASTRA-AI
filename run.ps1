@@ -72,7 +72,11 @@ Write-Host ('[*] Switched directory to: ' + $BackendDir) -ForegroundColor Gray
 # Trigger a background job to wait 6 seconds and open browser
 Start-Job -ScriptBlock {
     Start-Sleep -Seconds 6
-    Start-Process 'http://localhost:8080'
+    try {
+        Start-Process "chrome.exe" "http://localhost:8080" -ErrorAction Stop
+    } catch {
+        Start-Process "http://localhost:8080"
+    }
 } | Out-Null
 
 Write-Host '[✓] ASTRA server launching. Browser will open at http://localhost:8080.' -ForegroundColor Green
