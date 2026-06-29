@@ -181,4 +181,13 @@ public class ApiController {
         report.put("tokenActive", true);
         return ResponseEntity.ok(report);
     }
+
+    /**
+     * Get real-time hardware metrics.
+     */
+    @GetMapping("/system/metrics")
+    public ResponseEntity<Map<String, Object>> getMetrics() {
+        return ResponseEntity.ok(systemService.getSystemMetrics());
+    }
+
 }

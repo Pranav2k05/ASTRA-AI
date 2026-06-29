@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Monitor, Loader2, Check, Command } from 'lucide-react';
+import { Send, Sparkles, Monitor, Loader2, Check, Command, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 
 interface Wallpaper {
   id: string;
@@ -29,11 +29,55 @@ export default function ChatInterface() {
   const [wallpaperLoading, setWallpaperLoading] = useState<string | null>(null);
   const [wallpaperApplied, setWallpaperApplied] = useState<string | null>(null);
   
+  // Voice integration states
+  const [isListening, setIsListening] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  
+  const recognitionRef = useRef<any>(null);
+  const voiceEnabledRef = useRef(voiceEnabled);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  useEffect(() => {
+    voiceEnabledRef.current = voiceEnabled;
+  }, [voiceEnabled]);
+
+  // Speech Recognition setup
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript && transcript.trim()) {
+          submitMessage(transcript);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
 
   const getHeaders = () => {
     return {
@@ -42,20 +86,33 @@ export default function ChatInterface() {
     };
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim() || loading) return;
+  const speakText = (text: string) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const cleanText = text.replace(/\*\*|`|\[ACTION:[^\]]+\]/g, "").trim();
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Natural')) || 
+                           voices.find(v => v.lang.startsWith('en')) || 
+                           voices[0];
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+    utterance.rate = 1.05;
+    window.speechSynthesis.speak(utterance);
+  };
 
-    const userText = inputValue;
-    setInputValue('');
-    setMessages(prev => [...prev, { sender: 'user', text: userText }]);
+  const submitMessage = async (text: string) => {
+    if (!text.trim() || loading) return;
+
+    setMessages(prev => [...prev, { sender: 'user', text }]);
     setLoading(true);
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ message: userText })
+        body: JSON.stringify({ message: text })
       });
 
       if (res.ok) {
@@ -67,6 +124,10 @@ export default function ChatInterface() {
           actionExecuted: data.actionExecuted,
           success: data.success
         }]);
+
+        if (voiceEnabledRef.current) {
+          speakText(data.reply);
+        }
       } else {
         const errData = await res.json().catch(() => ({}));
         setMessages(prev => [...prev, {
@@ -81,6 +142,29 @@ export default function ChatInterface() {
       }]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim()) return;
+    submitMessage(inputValue);
+    setInputValue('');
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      setInputValue('');
+      try {
+        recognitionRef.current?.start();
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -345,31 +429,85 @@ export default function ChatInterface() {
         marginTop: 'auto',
         display: 'flex',
         gap: '12px',
-        padding: '16px',
+        padding: '12px 16px',
         background: 'rgba(18, 18, 30, 0.4)',
         border: '1px solid var(--border-light)',
         borderRadius: '14px',
         alignItems: 'center'
       }}>
-        <input
-          type="text"
-          placeholder="Ask ASTRA to open folders, terminals, set backgrounds or clean the desktop..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          disabled={loading}
+        {/* Toggle Audio Feedback */}
+        <button
+          type="button"
+          onClick={() => setVoiceEnabled(prev => !prev)}
           style={{
-            flexGrow: 1,
             background: 'transparent',
             border: 'none',
-            outline: 'none',
-            color: 'white',
-            fontSize: '15px',
-            padding: '8px 4px'
+            color: voiceEnabled ? 'var(--accent-primary)' : 'var(--text-muted)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '4px',
+            transition: 'color 0.2s'
           }}
-        />
+          title={voiceEnabled ? "Mute spoken feedback" : "Enable spoken feedback"}
+        >
+          {voiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+        </button>
+
+        {isListening ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexGrow: 1, padding: '8px 4px' }}>
+            <span style={{ fontSize: '13px', color: 'var(--accent-cyan)', fontWeight: 600, marginRight: '8px' }}>ASTRA is listening...</span>
+            <div className="voice-bar voice-bar-1"></div>
+            <div className="voice-bar voice-bar-2"></div>
+            <div className="voice-bar voice-bar-3"></div>
+            <div className="voice-bar voice-bar-4"></div>
+          </div>
+        ) : (
+          <input
+            type="text"
+            placeholder="Ask ASTRA to open folders, terminals, set backgrounds or clean the desktop..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            disabled={loading}
+            style={{
+              flexGrow: 1,
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: 'white',
+              fontSize: '15px',
+              padding: '8px 4px'
+            }}
+          />
+        )}
+
+        {/* Toggle Microphone */}
+        <button
+          type="button"
+          onClick={toggleListening}
+          disabled={loading}
+          style={{
+            background: isListening ? 'rgba(6, 182, 212, 0.15)' : 'transparent',
+            border: isListening ? '1px solid rgba(6, 182, 212, 0.3)' : 'none',
+            borderRadius: '50%',
+            color: isListening ? 'var(--accent-cyan)' : 'var(--text-muted)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '36px',
+            height: '36px',
+            transition: 'all 0.2s'
+          }}
+          title={isListening ? "Stop listening" : "Talk to ASTRA"}
+        >
+          {isListening ? <MicOff size={18} className="animate-pulse" /> : <Mic size={18} />}
+        </button>
+
         <button
           type="submit"
-          disabled={loading || !inputValue.trim()}
+          disabled={loading || !inputValue.trim() || isListening}
           className="glow-button"
           style={{
             width: '42px',

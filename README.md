@@ -9,136 +9,118 @@
         ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝
 ```
 
-**ASTRA** is a premium, secure, self-hosted AI Desktop Assistant built specifically for Windows laptops. It combines a robust **Java (Spring Boot 3)** systems control engine with a stunning, high-performance **React + TypeScript** web interface. ASTRA lets you control your computer naturally using text commands (like opening project folders in VS Code, launching cmd/PowerShell, cleaning up your desktop, or finding and setting high-definition wallpapers) while remaining completely immune to external hacking or network exploits.
+**ASTRA** is a local, private AI assistant for your Windows laptop. It lets you control your computer using plain English (like opening folders in VS Code, launching terminals, sorting your messy desktop files, or setting high-res wallpapers). Since it runs entirely on your local machine, it keeps your system secure and your data completely private.
+
+It combines a **Java (Spring Boot 3)** backend control engine with a clean, glassmorphic **React + TypeScript** web interface.
 
 ---
 
-## 🛠️ Technology Stack
-*   **Backend (Brain)**: Java 21/25, Spring Boot 3.4, Apache Maven
-*   **Frontend (UI)**: React 18, Vite 5, TypeScript, Lucide Icons, Vanilla CSS (Glassmorphism design system)
-*   **AI Engine**: Google Gemini 2.5 API (via local secure JSON REST queries) with an offline Regex Fallback Parser
-*   **System Bridge**: Windows PowerShell & `ProcessBuilder` OS integrations (safely executes tasks without exposing dangerous shell execution interfaces)
+## 🛠️ Tech Stack
+*   **Backend**: Java 21+, Spring Boot 3.4, Apache Maven
+*   **Frontend**: React 18, Vite 5, TypeScript, Lucide Icons, Custom CSS
+*   **AI Integration**: Google Gemini 2.5 API (over secure HTTPS) with a local regex fallback parser for offline command execution.
+*   **System Controls**: Windows Command Prompt, PowerShell, and Java `ProcessBuilder` (for running OS tasks safely).
 
 ---
 
-## 🛡️ Security Architecture: Why ASTRA Cannot Be Hacked
-Your laptop security is the #1 priority. ASTRA employs a zero-trust model consisting of three impenetrable defense layers:
+## 🛡️ Security: How ASTRA Keeps Your Laptop Safe
+Security isn't an afterthought here—ASTRA is built from the ground up to be safe:
 
-1.  **Local Loopback Binding Only (`127.0.0.1`)**  
-    The Spring Boot server is configured to bind *strictly* to `127.0.0.1` (localhost). This means **all** network ports are completely closed to your local home/school Wi-Fi, external local area networks, or the wide-area internet. No outside computer can query, connect to, or ping ASTRA.
-2.  **Cryptographic Handshake Security (`X-ASTRA-Token`)**  
-    On startup, the Java backend generates a cryptographically secure random 32-character session token. When you open the webpage, the backend dynamically injects this token into the browser origin DOM. Every single system API request `/api/**` requires this token inside the `X-ASTRA-Token` HTTP header. 
-    *   *Why this matters*: Even if you visit a malicious site in another browser tab, and it attempts a Cross-Origin Request Request (CSRF) or DNS Rebinding exploit to access `http://localhost:8080/api/system/vscode`, the browser sandbox blocks that tab from reading ASTRA's origin DOM. The request will fail verification and be rejected with an `HTTP 401 Unauthorized`.
-3.  **Process Isolation & Command Injection Shield**  
-    ASTRA never passes raw user text directly into command-line shells (which could lead to command injection like running `rm -rf` or `format C:`). Instead, paths and directories are parsed, validated to ensure they exist on the filesystem, and executed using strict array-based inputs inside Java's `ProcessBuilder`.
+1. **Local Loopback Only (`127.0.0.1`)**  
+   The backend server binds strictly to `127.0.0.1`. This means all network ports are closed to your local Wi-Fi, local area network, or the internet. No outside computer can ever connect to or query ASTRA.
+2. **Cryptographic Handshake (`X-ASTRA-Token`)**  
+   Every time ASTRA starts up, it generates a fresh, secure random 32-character session token. The backend dynamically injects this token into the browser DOM. Every single system API request (`/api/**`) must include this token in the `X-ASTRA-Token` HTTP header. This prevents Cross-Origin Request Forgery (CSRF) or malicious scripts running on other browser tabs from executing commands on your computer.
+3. **Safe Process Execution**  
+   To prevent command injection (like malicious inputs trying to run `rm -rf` or `format C:`), ASTRA never runs raw user text directly in command shells. Instead, it parses, validates files/folders to make sure they exist, and runs them using isolated arguments inside Java's `ProcessBuilder`.
 
-### 📊 System Architecture
-
-ASTRA operates via a secure local loopback architecture where the user's laptop browser loads the frontend statically from the Java web server, which dynamically injects the session token into the DOM. When the user interacts with the app, the frontend sends REST API requests containing the `X-ASTRA-Token` to the Spring Boot API Controller. Inside the Java backend (which is strictly bound to `127.0.0.1`), a Security Interceptor validates the token. Once access is verified, the request flows to the `LlmService`, which communicates externally with the Google Gemini Developer API over secure HTTPS to process user prompts. For system actions, the service delegates either to the `SystemService`- which executes safe OS commands using an isolated `ProcessBuilder`- or the `WallpaperService`- which dynamically updates the desktop background via native Windows `User32.dll` P/Invoke integrations.
+### 📊 How It Works
+When you start ASTRA, the backend generates a random session token and injects it into the frontend page. When you type a request (like opening a folder or searching), the frontend includes this token in its API request. The backend validates the token, determines if the command matches a local offline rule (like launching VS Code), or passes the prompt to Google Gemini. Gemini responds with the text reply and any necessary action tags (like `[ACTION:PLAY_YOUTUBE]`). The backend then executes the requested action securely using native Windows APIs or `ProcessBuilder` before sending the final status back to your browser.
 
 ---
 
-## 🚀 Getting Started (Installation & Launch)
+## 🚀 Getting Started
 
 ### 📋 Prerequisites
-Make sure your Windows laptop has the following software installed:
+Make sure you have these installed on your Windows machine:
 *   **Java Development Kit (JDK)**: Version 21 or newer
-*   **Node.js & npm**: For building the user interface
-*   **Apache Maven**: For building the backend 
+*   **Node.js & npm**: For building the frontend
+*   **Apache Maven**: For compiling the backend
 
-### 📥 Cloning & Setup
-Clone this repository to your local machine:
+### 📥 Setup
+Clone this repository locally:
 ```bash
 git clone https://github.com/Pranav2k05/ASTRA-AI.git
 cd ASTRA-AI
 ```
 
-### ⚡ One-Click Startup (Recommended)
-1.  Navigate to your workspace root directory.
-2.  Double-click the **`run.bat`** file.
-3.  This boots the loader script, which will:
-    *   Initialize the project.
-    *   Compile the frontend assets and link them to the backend statically.
-    *   Run the Maven Java Compiler.
-    *   Launch the secure server.
-    *   Automatically launch Google Chrome to run ASTRA with your active signed-in session (falling back to your system default browser if Chrome is not installed) at [http://localhost:8080](http://localhost:8080).
-4.  Keep the command prompt window open while you use ASTRA. Press `CTRL + C` in that window when you are ready to turn ASTRA off.
+### ⚡ Run It (One-Click)
+1. Double-click the **`run.bat`** file in your project directory.
+2. The script will automatically:
+   * Install frontend dependencies and build the static assets.
+   * Move the built assets to the backend.
+   * Compile and start the Spring Boot server.
+   * Launch Google Chrome pointing to [http://localhost:8080](http://localhost:8080) (or fallback to your default browser).
+3. Keep the command prompt window open. When you are done, press `CTRL + C` in that window to shut it down.
 
 ---
 
-## 💡 How To Use ASTRA
+## 💡 Prompt Examples
+Once you're in the chat interface, try typing things like:
 
-### 🔑 Setting up the AI (First-Time Only)
-1.  Once the web interface loads, click on the **Brain Settings** tab in the sidebar.
-2.  Paste your Google Gemini API Key. You can get a free key from [Google AI Studio Console](https://aistudio.google.com/).
-3.  Click **Save Key**. The key is stored locally in `C:\Users\User\.astra\config.json` (never shared or uploaded anywhere else).
-
-### 💬 Sample Natural Language Prompts
-In the **AI Dialogue** tab, type anything you want to run! Here are some examples:
 *   **Play Music on YouTube (Autoplay)**:
     *   `play chill lofi beats`
-    *   `play some song on youtube`
-    *   `open youtube and play synthwave`
-    *   *(Note: ASTRA queries YouTube, resolves the first matching video ID, and launches it in Chrome with autoplay immediately.)*
-*   **Search Google Instantly**:
-    *   `google standard deviation formula`
-    *   `search google for latest AI news`
-*   **Open Directories in VS Code**:
+    *   `play some music on youtube`
+*   **Search Google**:
+    *   `google how to write a binary search in Java`
+    *   `search google for latest web dev trends`
+*   **Open Projects in VS Code**:
     *   `open vscode C:\Users\User\Desktop\ProjectClge\ASTRA`
-    *   `open my documents folder in vs code`
-*   **Launch Terminals**:
-    *   `open terminal` (Opens Command Prompt in your user directory)
-    *   `open powershell C:\Users\User\Documents` (Opens PowerShell in your documents folder)
-*   **Clean and Organize Your Desktop**:
-    *   `organize desktop`
-    *   `clean up my desktop`
-    *   *(Note: This sweeps loose files on your desktop and organizes them into categorised folders: Images, Documents, Archives, Installers, Video, Audio, Code, etc.)*
-*   **Change Desktop Wallpapers**:
-    *   `search wallpapers cyber neon`
-    *   `find wallpaper space galaxy`
-    *   *(Note: This queries Unsplash's public registry. You can browse the results in the chat and click **Set Desktop Background** to apply the wallpaper instantly!)*
-*   **General Chat**:
-    *   `What projects are under C:\Users\User\Desktop?`
-    *   `Write a quick Python script to rename files`
+*   **Open Terminals**:
+    *   `open terminal` (opens CMD in your user directory)
+    *   `open powershell C:\Users\User\Documents`
+*   **Clean Up Your Desktop**:
+    *   `organize desktop` (moves stray files on your desktop into categorized folders like Images, Documents, Archives, Audio, etc.)
+*   **Find & Set Wallpapers**:
+    *   `search wallpapers dark cyberpunk`
+    *   *(You can preview results in the UI and click to set your desktop background instantly!)*
 
 ---
 
-## 📁 Project Structure
-
+## 📁 Project Layout
 ```
 ASTRA/
 │
-├── run.bat                     # Windows Explorer launcher (Double-click to start)
-├── run.ps1                     # PowerShell Orchestrator script
-├── README.md                   # This instruction manual
+├── run.bat                     # Double-click to start
+├── run.ps1                     # PowerShell build & launch script
+├── README.md                   # This file
 │
-├── backend/                    # Java Maven Spring Boot Project
-│   ├── pom.xml                 # Maven dependency management
+├── backend/                    # Spring Boot Application
+│   ├── pom.xml                 # Maven dependencies
 │   └── src/main/
 │       ├── java/com/astra/assistant/
-│       │   ├── AstraApplication.java       # Server Boot class
-│       │   ├── config/                     # Security configuration & Interceptors
-│       │   ├── controller/                 # ViewController & Secured ApiController
-│       │   └── service/                    # OS, Wallpaper, LLM, & Config engines
+│       │   ├── AstraApplication.java
+│       │   ├── config/         # Security configs and interceptors
+│       │   ├── controller/     # API and page view controllers
+│       │   └── service/        # Core logic: LLM, system, wallpapers
 │       └── resources/
-│           ├── application.properties      # Network server bindings (127.0.0.1)
-│           └── static/                     # Target folder for built UI assets
+│           ├── application.properties
+│           └── static/         # Location of built frontend assets
 │
-└── frontend/                   # React + Vite + TS UI Project
-    ├── package.json            # Web dependency configuration
-    ├── vite.config.ts          # Build setup (proxies /api to 8080, builds to backend/static)
-    ├── index.html              # Core single-page HTML
+└── frontend/                   # React Web App
+    ├── package.json
+    ├── vite.config.ts          # Compiles and outputs static files to backend
+    ├── index.html
     └── src/
-        ├── main.tsx            # React Mount entrypoint
-        ├── App.tsx             # Main tab controller & Sidebar Shell
-        ├── index.css           # Premium Glassmorphism styling sheets
-        └── components/         # Chat, System Controls, Security, & Settings views
+        ├── main.tsx
+        ├── App.tsx
+        ├── index.css           # 3D Glassmorphism styling
+        └── components/         # Chat, settings, and UI components
 ```
 
 ---
 
-## 🛡️ Data Storage Isolation
-All configurations and temporary downloads are stored locally on your hard disk under:
+## 🔒 Where is data stored?
+All local settings and downloaded wallpapers are cached on your hard drive under:
 *   `C:\Users\<Your-Username>\.astra\`
-    *   `config.json`: Stores your API key and other local preferences securely.
-    *   `wallpapers\`: Caches downloaded images applied to your desktop.
+    *   `config.json`: Stores your Gemini API key locally (never shared or uploaded).
+    *   `wallpapers\`: Caches background images downloaded from Unsplash.

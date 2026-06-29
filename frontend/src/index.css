@@ -327,3 +327,20 @@ body {
 .animate-slide-in {
   animation: slide-in-bubble 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* 3D Voice Waveform Animations */
+.voice-bar {
+  width: 3px;
+  background: var(--accent-cyan);
+  border-radius: 99px;
+  animation: pulse-wave 0.8s ease-in-out infinite alternate;
+}
+.voice-bar-1 { animation-delay: 0.1s; height: 10px; }
+.voice-bar-2 { animation-delay: 0.3s; height: 18px; }
+.voice-bar-3 { animation-delay: 0.2s; height: 12px; }
+.voice-bar-4 { animation-delay: 0.4s; height: 16px; }
+
+@keyframes pulse-wave {
+  0% { transform: scaleY(0.4); }
+  100% { transform: scaleY(1.4); }
+}

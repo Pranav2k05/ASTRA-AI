@@ -1,11 +1,15 @@
-import { useState } from 'react';
-import { Terminal, FolderOpen, Wand2, CheckCircle, AlertTriangle, Play } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Terminal, FolderOpen, Wand2, CheckCircle, AlertTriangle, Play, Activity, Cpu, Layers, HardDrive } from 'lucide-react';
 
 export default function SystemControls() {
   const [vscodePath, setVscodePath] = useState('');
   const [terminalPath, setTerminalPath] = useState('');
   const [shellType, setShellType] = useState('cmd');
   
+  // Metrics states
+  const [metrics, setMetrics] = useState<{ cpuUsage: number; memoryUsage: number; diskUsage: number; totalMemory: number; usedMemory: number; totalDisk: number; usedDisk: number } | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(true);
+
   // Status states
   const [vscodeStatus, setVscodeStatus] = useState<{ success?: boolean; msg?: string } | null>(null);
   const [terminalStatus, setTerminalStatus] = useState<{ success?: boolean; msg?: string } | null>(null);
@@ -18,6 +22,30 @@ export default function SystemControls() {
       'X-ASTRA-Token': (window as any).ASTRA_TOKEN || ''
     };
   };
+
+  const fetchMetrics = async () => {
+    try {
+      const res = await fetch('/api/system/metrics', {
+        headers: getHeaders()
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMetrics(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setMetricsLoading(false);
+    }
+  };
+
+
+
+  useEffect(() => {
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleOpenVsCode = async (pathOverride?: string) => {
     const targetPath = pathOverride || vscodePath;
@@ -101,6 +129,120 @@ export default function SystemControls() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
       
+      {/* 3D Hardware Metrics Center */}
+      <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Activity size={24} style={{ color: 'var(--accent-cyan)' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Real-time System Status</h3>
+        </div>
+
+        {metricsLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '20px', color: 'var(--text-secondary)' }}>
+            Polling hardware diagnostics...
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+            
+            {/* CPU Usage Card */}
+            <div className="glass-card" style={{ padding: '20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ position: 'relative', width: '70px', height: '70px', flexShrink: 0 }}>
+                <svg width="70" height="70" viewBox="0 0 70 70">
+                  <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="6" />
+                  <circle cx="35" cy="35" r="28" fill="none" stroke="url(#cpuGrad)" strokeWidth="6"
+                    strokeDasharray={2 * Math.PI * 28}
+                    strokeDashoffset={2 * Math.PI * 28 * (1 - (metrics?.cpuUsage || 0) / 100)}
+                    strokeLinecap="round"
+                    transform="rotate(-90 35 35)"
+                    style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+                  />
+                  <defs>
+                    <linearGradient id="cpuGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#06b6d4" />
+                      <stop offset="100%" stopColor="#8b5cf6" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '13px', fontWeight: 700, color: 'white' }}>
+                  {metrics?.cpuUsage}%
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Processor Load</span>
+                <span style={{ fontSize: '15px', fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Cpu size={14} style={{ color: 'var(--accent-cyan)' }} />
+                  Live CPU Load
+                </span>
+              </div>
+            </div>
+
+            {/* RAM Usage Card */}
+            <div className="glass-card" style={{ padding: '20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ position: 'relative', width: '70px', height: '70px', flexShrink: 0 }}>
+                <svg width="70" height="70" viewBox="0 0 70 70">
+                  <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="6" />
+                  <circle cx="35" cy="35" r="28" fill="none" stroke="url(#ramGrad)" strokeWidth="6"
+                    strokeDasharray={2 * Math.PI * 28}
+                    strokeDashoffset={2 * Math.PI * 28 * (1 - (metrics?.memoryUsage || 0) / 100)}
+                    strokeLinecap="round"
+                    transform="rotate(-90 35 35)"
+                    style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+                  />
+                  <defs>
+                    <linearGradient id="ramGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#8b5cf6" />
+                      <stop offset="100%" stopColor="#ec4899" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '13px', fontWeight: 700, color: 'white' }}>
+                  {metrics?.memoryUsage}%
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Physical RAM</span>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Layers size={14} style={{ color: 'var(--accent-primary)' }} />
+                  {metrics?.usedMemory} / {metrics?.totalMemory} GB
+                </span>
+              </div>
+            </div>
+
+            {/* Disk Usage Card */}
+            <div className="glass-card" style={{ padding: '20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ position: 'relative', width: '70px', height: '70px', flexShrink: 0 }}>
+                <svg width="70" height="70" viewBox="0 0 70 70">
+                  <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="6" />
+                  <circle cx="35" cy="35" r="28" fill="none" stroke="url(#diskGrad)" strokeWidth="6"
+                    strokeDasharray={2 * Math.PI * 28}
+                    strokeDashoffset={2 * Math.PI * 28 * (1 - (metrics?.diskUsage || 0) / 100)}
+                    strokeLinecap="round"
+                    transform="rotate(-90 35 35)"
+                    style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+                  />
+                  <defs>
+                    <linearGradient id="diskGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#ec4899" />
+                      <stop offset="100%" stopColor="#06b6d4" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '13px', fontWeight: 700, color: 'white' }}>
+                  {metrics?.diskUsage}%
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>System Drive (C:)</span>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <HardDrive size={14} style={{ color: 'var(--accent-secondary)' }} />
+                  {metrics?.usedDisk} / {metrics?.totalDisk} GB
+                </span>
+              </div>
+            </div>
+
+          </div>
+        )}
+      </div>
+
       {/* Upper Grid: VS Code & Terminal Controls */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px' }}>
         
@@ -287,6 +429,8 @@ export default function SystemControls() {
           )}
         </div>
       </div>
+
+
 
       {/* Desktop Organizer Card */}
       <div className="glass-panel" style={{ padding: '32px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '24px' }}>

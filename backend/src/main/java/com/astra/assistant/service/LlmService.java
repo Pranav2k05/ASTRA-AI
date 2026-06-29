@@ -102,6 +102,15 @@ public class LlmService {
                 res.put("actionExecuted", "OPEN_APP");
                 res.put("success", success);
                 return res;
+            } else {
+                // If it is a local file/document path or network path
+                if (app.contains(":\\") || app.contains(":/") || app.startsWith("\\\\") || app.contains(".")) {
+                    boolean success = systemService.openApplication(app);
+                    res.put("reply", "Opening local resource: `" + app + "`");
+                    res.put("actionExecuted", "OPEN_APP");
+                    res.put("success", success);
+                    return res;
+                }
             }
         }
 
@@ -235,9 +244,9 @@ public class LlmService {
                 "   Format: [ACTION:ORGANIZE_DESKTOP]\n" +
                 "4. Search and browse desktop wallpapers:\n" +
                 "   Format: [ACTION:SEARCH_WALLPAPERS;QUERY:keyword]\n" +
-                "5. Open any registered Windows application, protocol (e.g. whatsapp:), or website URL:\n" +
-                "   Format: [ACTION:OPEN_APP;QUERY:appName_or_URL_or_protocol]\n" +
-                "   Examples: [ACTION:OPEN_APP;QUERY:calc], [ACTION:OPEN_APP;QUERY:notepad], [ACTION:OPEN_APP;QUERY:whatsapp:], [ACTION:OPEN_APP;QUERY:chrome], [ACTION:OPEN_APP;QUERY:https://google.com], [ACTION:OPEN_APP;QUERY:ms-settings:]\n" +
+                "5. Open any registered Windows application, protocol (e.g. whatsapp:), website URL, or local file/document path:\n" +
+                "   Format: [ACTION:OPEN_APP;QUERY:appName_or_URL_or_protocol_or_filePath]\n" +
+                "   Examples: [ACTION:OPEN_APP;QUERY:calc], [ACTION:OPEN_APP;QUERY:C:\\Users\\User\\Documents\\notes.pdf], [ACTION:OPEN_APP;QUERY:whatsapp:], [ACTION:OPEN_APP;QUERY:chrome], [ACTION:OPEN_APP;QUERY:https://google.com], [ACTION:OPEN_APP;QUERY:ms-settings:]\n" +
                 "6. Search YouTube for music/songs and autoplay it:\n" +
                 "   Format: [ACTION:PLAY_YOUTUBE;QUERY:song_name_or_keyword]\n" +
                 "7. Search Google for queries:\n" +

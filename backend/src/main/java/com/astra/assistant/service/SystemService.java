@@ -183,6 +183,11 @@ public class SystemService {
             return false;
         }
 
+        // Route web links directly to the chrome-explicit URL opener
+        if (appName.startsWith("http://") || appName.startsWith("https://")) {
+            return openUrlInChromeOrFallback(appName);
+        }
+
         // Clean input to block malicious characters while permitting standard letters, paths, websites, and protocols
         String cleanName = appName.replaceAll("[^a-zA-Z0-9.:/\\-_ ]", "").trim();
         if (cleanName.isEmpty()) {
@@ -197,6 +202,45 @@ public class SystemService {
         } catch (IOException e) {
             System.err.println("Failed to launch application '" + cleanName + "': " + e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Open a URL in Google Chrome explicitly, or fall back to system default.
+     * Preserves URL parameters securely.
+     */
+    public boolean openUrlInChromeOrFallback(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            return false;
+        }
+
+        // Validate that it is a URL to prevent command injection
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return false;
+        }
+
+        // Clean the URL, allowing valid URL characters: letters, numbers, and standard URL punctuation (? & = % / . : - _ + #)
+        String cleanUrl = url.replaceAll("[^a-zA-Z0-9.:/\\-_?&=\\%+#]", "").trim();
+        if (cleanUrl.isEmpty()) {
+            return false;
+        }
+
+        try {
+            // Launch chrome with the URL
+            ProcessBuilder pb = new ProcessBuilder("cmd.exe", "/c", "start", "chrome", cleanUrl);
+            pb.start();
+            return true;
+        } catch (Exception e) {
+            System.err.println("Failed to launch Chrome for URL: " + e.getMessage());
+            try {
+                // Fallback: Open with default browser
+                ProcessBuilder pbFallback = new ProcessBuilder("cmd.exe", "/c", "start", "", cleanUrl);
+                pbFallback.start();
+                return true;
+            } catch (Exception ex) {
+                System.err.println("Fallback launch failed: " + ex.getMessage());
+                return false;
+            }
         }
     }
 
@@ -247,15 +291,15 @@ public class SystemService {
         String finalUrl;
         if (videoId != null && !videoId.isEmpty()) {
             finalUrl = "https://www.youtube.com/watch?v=" + videoId + "&autoplay=1";
-            System.out.println("[YouTube] Found first video ID: " + videoId + ", launching with autoplay.");
+            System.out.println("[YouTube] Found first video ID: " + videoId + ", launching in Chrome with autoplay.");
         } else {
             // Fallback to search query page
             finalUrl = searchUrl;
             System.out.println("[YouTube] Could not resolve first video ID, falling back to search query URL.");
         }
 
-        // Open in default browser (Chrome as configured)
-        return openApplication(finalUrl);
+        // Open in Chrome explicitly
+        return openUrlInChromeOrFallback(finalUrl);
     }
 
     /**
@@ -266,6 +310,45 @@ public class SystemService {
             return false;
         }
         String searchUrl = "https://www.google.com/search?q=" + java.net.URLEncoder.encode(query.trim(), java.nio.charset.StandardCharsets.UTF_8);
-        return openApplication(searchUrl);
+        return openUrlInChromeOrFallback(searchUrl);
+    }
+
+    /**
+     * Collect real-time operating metrics (CPU, RAM, Disk).
+     */
+    public Map<String, Object> getSystemMetrics() {
+        Map<String, Object> metrics = new HashMap<>();
+        try {
+            com.sun.management.OperatingSystemMXBean osBean = 
+                (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+            
+            double cpuLoad = osBean.getCpuLoad();
+            if (cpuLoad < 0) cpuLoad = 0; // handle initial reading load
+            metrics.put("cpuUsage", Math.round(cpuLoad * 100.0 * 10.0) / 10.0); // round to 1 decimal
+            
+            long totalMem = osBean.getTotalMemorySize();
+            long freeMem = osBean.getFreeMemorySize();
+            long usedMem = totalMem - freeMem;
+            
+            metrics.put("totalMemory", Math.round((totalMem / (1024.0 * 1024.0 * 1024.0)) * 10.0) / 10.0); // GB
+            metrics.put("usedMemory", Math.round((usedMem / (1024.0 * 1024.0 * 1024.0)) * 10.0) / 10.0); // GB
+            metrics.put("memoryUsage", Math.round(((double) usedMem / totalMem) * 100.0 * 10.0) / 10.0); // %
+            
+            File disk = new File("C:\\");
+            long totalDisk = disk.getTotalSpace();
+            long freeDisk = disk.getFreeSpace();
+            long usedDisk = totalDisk - freeDisk;
+            
+            metrics.put("totalDisk", Math.round((totalDisk / (1024.0 * 1024.0 * 1024.0)) * 10.0) / 10.0); // GB
+            metrics.put("usedDisk", Math.round((usedDisk / (1024.0 * 1024.0 * 1024.0)) * 10.0) / 10.0); // GB
+            metrics.put("diskUsage", Math.round(((double) usedDisk / totalDisk) * 100.0 * 10.0) / 10.0); // %
+        } catch (Exception e) {
+            System.err.println("Error fetching metrics: " + e.getMessage());
+            metrics.put("cpuUsage", 0.0);
+            metrics.put("memoryUsage", 0.0);
+            metrics.put("diskUsage", 0.0);
+        }
+        return metrics;
     }
 }
+
