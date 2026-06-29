@@ -54,7 +54,7 @@ cd ASTRA-AI
 ```
 
 ### ⚡ One-Click Startup (Recommended)
-1.  Navigate to your workspace root directory:
+1.  Navigate to your workspace root directory.
 2.  Double-click the **`run.bat`** file.
 3.  This boots the loader script, which will:
     *   Initialize the project.
