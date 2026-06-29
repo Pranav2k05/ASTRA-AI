@@ -34,7 +34,7 @@ Your laptop security is the #1 priority. ASTRA employs a zero-trust model consis
 
 ### 📊 System Architecture
 
-ASTRA operates via a secure local loopback architecture where the user's laptop browser loads the frontend statically from the Java web server, which dynamically injects the session token into the DOM. When the user interacts with the app, the frontend sends REST API requests containing the `X-ASTRA-Token` to the Spring Boot API Controller. Inside the Java backend (which is strictly bound to `127.0.0.1`), a Security Interceptor validates the token. Once access is verified, the request flows to the `LlmService`, which communicates externally with the Google Gemini Developer API over secure HTTPS to process user prompts. For system actions, the service delegates either to the `SystemService`— which executes safe OS commands using an isolated `ProcessBuilder`— or the `WallpaperService`—which dynamically updates the desktop background via native Windows `User32.dll` P/Invoke integrations.
+ASTRA operates via a secure local loopback architecture where the user's laptop browser loads the frontend statically from the Java web server, which dynamically injects the session token into the DOM. When the user interacts with the app, the frontend sends REST API requests containing the `X-ASTRA-Token` to the Spring Boot API Controller. Inside the Java backend (which is strictly bound to `127.0.0.1`), a Security Interceptor validates the token. Once access is verified, the request flows to the `LlmService`, which communicates externally with the Google Gemini Developer API over secure HTTPS to process user prompts. For system actions, the service delegates either to the `SystemService`- which executes safe OS commands using an isolated `ProcessBuilder`- or the `WallpaperService`- which dynamically updates the desktop background via native Windows `User32.dll` P/Invoke integrations.
 
 ---
 
@@ -54,7 +54,7 @@ cd ASTRA-AI
 ```
 
 ### ⚡ One-Click Startup (Recommended)
-1.  Navigate to your workspace root directory: `C:\Users\User\Desktop\ProjectClge\ASTRA`
+1.  Navigate to your workspace root directory:
 2.  Double-click the **`run.bat`** file.
 3.  This boots the loader script, which will:
     *   Initialize the project.
